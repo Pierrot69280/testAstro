@@ -2164,6 +2164,46 @@ scene("levelTrois",()=>{
 //TODO ############################ SCENE LOSE ################################"
 scene('lose',()=>{
 
+    function addButton(txt, p, f) {
+
+
+        const btn = add([
+            rect(240, 80, { radius: 8 }),
+            pos(p),
+            area(),
+            scale(1),
+            anchor("center"),
+            outline(4),
+        ])
+
+
+        btn.add([
+            text(txt),
+            anchor("center"),
+            color(0, 0, 0),
+        ])
+
+        btn.onHoverUpdate(() => {
+            const t = time() * 10
+            btn.color = hsl2rgb((t / 10) % 1, 0.6, 0.7)
+            btn.scale = vec2(1.2)
+            setCursor("pointer")
+        })
+
+        btn.onHoverEnd(() => {
+            btn.scale = vec2(1)
+            btn.color = rgb()
+        })
+
+        btn.onClick(f)
+
+        return btn
+
+    }
+
+    addButton("Chose Level",vec2(300,400),()=> go("chooseLevel"))
+    addButton("Menu",vec2(600,400),()=> go("menu"))
+
     add([
         sprite("bg-death"),
         scale(0.500)
