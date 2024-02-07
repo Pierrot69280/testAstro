@@ -805,6 +805,8 @@ scene("levelUn",()=>{
 
     onCollide("playerBullet", "dangerous", (p, d) => {
         destroy(d)
+        score.value += 20
+        score.text = "score: " + score.value;
     })
 
     // ########################### SCORE #############################
@@ -1074,11 +1076,11 @@ scene("levelDeux",()=>{
                 '                                                                                                                 ',
                 '                                                                                                                 ',
                 '                                                                                                                 ',
+                '                                                  *                                                               ',
                 '                                                                                                                 ',
                 '                                                                                                                 ',
-                '                                                                                                                 ',
-                '                                                                                                                 ',
-                '                                                                                                                 ',
+                '                     *                                                                                            ',
+                '                            *                                                                                     ',
                 '                                                                                                                 ',
                 '                                                                                                                 ',
                 '                                                                                                                 ',
@@ -1099,7 +1101,7 @@ scene("levelDeux",()=>{
                     "g": () => [sprite("powerlight", {frame:19}),scale(4.5)],
                     "h": () => [sprite("shipbits", {frame:33}),scale(4.5)],
                     "i": () => [sprite("pit", {frame:34}),scale(4.5)],
-                    "*": () => [sprite("pod", {frame:3}),scale(2.5)],
+                    "*": () => [sprite("pod", {frame:3}),scale(2.5), anchor("bot"), patrol(), offscreen({ hide: true }),  area(), "dangerous"],
                     "k": () => [sprite("messagebox", {frame:36}),scale(4.5)],
                     "l": () => [sprite("rocks", {frame:37}),scale(4.5)],
                     "m": () => [sprite("beam", {frame:38}),scale(4.5)],
@@ -1419,27 +1421,51 @@ scene("levelDeux",()=>{
     // 	gunDestroyed = true
     // })
 
-    player.onCollide("dangerous", () => {
-        player.hurt(20)
-        healthBar.value -= 20
-        healthBar.text = healthBar.value + "pv"
-        console.log(healthBar.value)
-        if (healthBar.value <= 0)
+
+
+
+
+    // ########################## Health ############################
+
+    const healthBar = add([
+
+        fixed(),
+        text("❤️❤️❤️❤️❤️"),
+        pos(width() / 15, 20),
         {
-            go('lose')
-            wait(2,()=>{
-                go('scene')
-            })
+            value: 100,
         }
-    })
+    ])
+
+    player.onCollide("dangerous", () => {
+        player.hurt(20);
+        healthBar.value -= 20;
+        updateHealthBar();
+        if (healthBar.value <= 0) {
+            go('lose');
+            wait(2, () => {
+                go('scene');
+            });
+        }
+    });
+
+    function updateHealthBar() {
+        let remainingStars = Math.ceil(healthBar.value / 20);
+        healthBar.text = "❤️".repeat(remainingStars);
+        console.log(healthBar.value);
+    }
+
 
     onCollide("playerBullet", "dangerous", (p, d) => {
         destroy(d)
+        score.value += 20
+        score.text = "score: " + score.value;
     })
 
     // ########################### SCORE #############################
 
     const score = add([
+        fixed(),
         text("score: 0"),
         pos(width()-200,20),
         {
@@ -1451,32 +1477,22 @@ scene("levelDeux",()=>{
 
     // ############################# TIMER ###############################
 
-    // const timer = add([
-    // 	text("0"),
-    // 	pos(width()-200,60),
-    // 	{
-    // 		value:0,
-    // 	},
-    // ])
-    //
-    // loop(1,()=>{
-    // 	timer.value ++
-    // 	timer.text = timer.value
-    // })
+    const timer = add([
+        fixed(),
+        text("0"),
+        pos(width()-400,20),
+        {
+            value:0,
+        },
+    ])
+
+    loop(1,()=>{
+        timer.value ++
+        timer.text = timer.value
+    })
 
     // ###############################################################
 
-    // ########################## Health ############################
-
-    const healthBar = add([
-        text( "100 pv"),
-        pos(width()/2,20),
-        {
-            value:100,
-        }
-    ])
-
-    //################################################################
 
 
 })
@@ -1639,11 +1655,11 @@ scene("levelTrois",()=>{
                 '                                                   ',
                 '   fffff                                           ',
                 '                                                   ',
-                '   o     fffffff                                   ',
+                '   o     fffffff           *                        ',
                 '   o oo               fffffff                      ',
                 '                                fffff    ff        ',
-                '   defg                                            ',
-                '   klmn                                       fffff',
+                '   defg      *                                      ',
+                '   klmn                     *                  fffff',
                 '   stuv                                             ',
                 '                          fffffff      fffffff      ',
 /////////////////////////////////////////////////////////////////////|
@@ -1677,6 +1693,8 @@ scene("levelTrois",()=>{
                     "t": () => [sprite("map", {frame:177}),scale(4.5)],
                     "u": () => [sprite("map", {frame:178}),scale(4.5)],
                     "v": () => [sprite("map", {frame:179}),scale(4.5)],
+                    "*": () => [sprite("pod", {frame:3}),scale(2.5), anchor("bot"), patrol(), offscreen({ hide: true }),  area(), "dangerous"],
+
                 },
             })
     ]
@@ -1690,8 +1708,8 @@ scene("levelTrois",()=>{
 
     const SPEED = 250
     const JUMP_FORCE = 270
-    const ENEMY_SPEED = 60
-    const BULLET_SPEED = 200
+    const ENEMY_SPEED = 100
+    const BULLET_SPEED = 500
     let PLAYER_HEALTH = 100
     let gunDestroyed = false
 
@@ -1956,12 +1974,13 @@ scene("levelTrois",()=>{
 
     const enemy = add([
         sprite("ghosty"),
-        scale(1.5),
+        scale(4),
         pos(450,50),
         area(),
         body(),
         anchor("center"),
         state("move", [ "idle", "attack", "move" ]),
+
     ])
 
 
@@ -2039,24 +2058,29 @@ scene("levelTrois",()=>{
 
     // ---------------- COLLIDE -----------------
 
+    let enemyBulletCount = 0;
+
     player.onCollide("enemyBullet", (bullet) => {
-        destroy(bullet)
-        player.hurt(20)
-        healthBar.value -= 20
-        healthBar.text = healthBar.value + "pv"
-        console.log(healthBar.value)
-        if (healthBar.value <= 0)
-        {
-            go('lose')
-            wait(2,()=>{
-                go('scene')
-            })
+        player.hurt(20);
+        healthBar.value -= 20;
+        updateHealthBar();
+        if (healthBar.value <= 0) {
+            go('lose');
+            wait(2, () => {
+                go('scene');
+            });
         }
-    })
+        destroy(bullet);
+    });
 
     enemy.onCollide("playerBullet", (bullet) => {
-        destroy(enemy)
-        console.log("touch enemy")
+        destroy(bullet)
+        enemyBulletCount++
+        if (enemyBulletCount >= 20) {
+            destroy(enemy);
+            score.value += 100;
+            score.text = "score: " + score.value;
+        }
     })
 
     // player.onCollide('gun', (m) => {
@@ -2064,27 +2088,47 @@ scene("levelTrois",()=>{
     // 	gunDestroyed = true
     // })
 
-    player.onCollide("dangerous", () => {
-        player.hurt(20)
-        healthBar.value -= 20
-        healthBar.text = healthBar.value + "pv"
-        console.log(healthBar.value)
-        if (healthBar.value <= 0)
+    // ########################## Health ############################
+
+    const healthBar = add([
+
+        fixed(),
+        text("❤️❤️❤️❤️❤️"),
+        pos(width() / 15, 20),
         {
-            go('lose')
-            wait(2,()=>{
-                go('scene')
-            })
+            value: 100,
         }
-    })
+    ])
+
+    player.onCollide("dangerous", () => {
+        player.hurt(20);
+        healthBar.value -= 20;
+        updateHealthBar();
+        if (healthBar.value <= 0) {
+            go('lose');
+            wait(2, () => {
+                go('scene');
+            });
+        }
+    });
+
+    function updateHealthBar() {
+        let remainingStars = Math.ceil(healthBar.value / 20);
+        healthBar.text = "❤️".repeat(remainingStars);
+        console.log(healthBar.value);
+    }
+
 
     onCollide("playerBullet", "dangerous", (p, d) => {
         destroy(d)
+        score.value += 20
+        score.text = "score: " + score.value;
     })
 
     // ########################### SCORE #############################
 
     const score = add([
+        fixed(),
         text("score: 0"),
         pos(width()-200,20),
         {
@@ -2096,32 +2140,22 @@ scene("levelTrois",()=>{
 
     // ############################# TIMER ###############################
 
-    // const timer = add([
-    // 	text("0"),
-    // 	pos(width()-200,60),
-    // 	{
-    // 		value:0,
-    // 	},
-    // ])
-    //
-    // loop(1,()=>{
-    // 	timer.value ++
-    // 	timer.text = timer.value
-    // })
+    const timer = add([
+        fixed(),
+        text("0"),
+        pos(width()-400,20),
+        {
+            value:0,
+        },
+    ])
+
+    loop(1,()=>{
+        timer.value ++
+        timer.text = timer.value
+    })
 
     // ###############################################################
 
-    // ########################## Health ############################
-
-    const healthBar = add([
-        text( "100 pv"),
-        pos(width()/2,20),
-        {
-            value:100,
-        }
-    ])
-
-    //################################################################
 
 
 })
@@ -2131,9 +2165,54 @@ scene("levelTrois",()=>{
 scene('lose',()=>{
 
     add([
+        sprite("bg-death"),
+        scale(0.500)
+    ])
+
+    function addButton(txt, p, f) {
+
+
+        const btn = add([
+            rect(240, 80, { radius: 8 }),
+            pos(p),
+            area(),
+            scale(1),
+            anchor("center"),
+            outline(4),
+        ])
+
+
+        btn.add([
+            text(txt),
+            anchor("center"),
+            color(0, 0, 0),
+        ])
+
+        btn.onHoverUpdate(() => {
+            const t = time() * 10
+            btn.color = hsl2rgb((t / 10) % 1, 0.6, 0.7)
+            btn.scale = vec2(1.2)
+            setCursor("pointer")
+        })
+
+        btn.onHoverEnd(() => {
+            btn.scale = vec2(1)
+            btn.color = rgb()
+        })
+
+        btn.onClick(f)
+
+        return btn
+
+    }
+
+    addButton("Chose Level",vec2(300,400),()=> go("chooseLevel"))
+    addButton("Menu",vec2(600,400),()=> go("menu"))
+
+    add([
         text('you lose'),
         anchor('center'),
-        scale(5),
+        scale(3),
         pos(width()/2, height()/2)
     ])
 })
@@ -2222,7 +2301,7 @@ scene("chooseLevel", () => {
     addButton("Niveau 3",vec2(450,400),()=> go("levelTrois"))
 
     add([
-        text("Dans le game ",  {
+        text("Chose Level ",  {
 
             size: 40,
             outline: 4
@@ -2234,64 +2313,3 @@ scene("chooseLevel", () => {
 go("menu")
 
 
-
-// scene("menu",()=>{
-//     setBackground(0,0,0)
-//
-//     add([
-//         text("Gamepad not found", {
-//             width: width() - 30,
-//             align: "center",
-//         }),
-//         pos(center()),
-//         anchor("center"),
-//     ])
-//
-//     onGamepadConnect(()=>{
-//         add([
-//             text("Gamepad Connected", {
-//                 width: width() - 500,
-//                 align: "center",
-//             }),
-//             pos(center()),
-//             anchor("center"),
-//         ])
-//         isGamepadConnected = true
-//     })
-//
-//     function addButton(txt, p, f) {
-//
-//
-//         const btn = add([
-//             rect(240, 80, { radius: 8 }),
-//             pos(p),
-//             area(),
-//             scale(1),
-//             anchor("center"),
-//             outline(4),
-//         ])
-//
-//
-//         btn.add([
-//             text(txt),
-//             anchor("center"),
-//             color(0, 0, 0),
-//         ])
-//
-//         btn.onHoverUpdate(() => {
-//             const t = time() * 10
-//             btn.color = hsl2rgb((t / 10) % 1, 0.6, 0.7)
-//             btn.scale = vec2(1.2)
-//             setCursor("pointer")
-//         })
-//
-//         btn.onHoverEnd(() => {
-//             btn.scale = vec2(1)
-//             btn.color = rgb()
-//         })
-//
-//         btn.onClick(f)
-//
-//         return btn
-//
-//     }
